@@ -17,6 +17,14 @@ class Player:
         self.hand = pydealer.Stack()
         self.hand += initial_cards
 
+    def number_of_aces(self):
+        hand_aces = 0 if self.hand.size == 0 else len(self.hand.find('Ace'))
+        pile_aces = 0 if self.pile.size == 0 else len(self.pile.find('Ace'))
+        return hand_aces + pile_aces
+
+    def number_of_cards(self):
+        return self.hand.size + self.pile.size
+
     def print_cards(self, debug=False):
         hand_aces = 0 if self.hand.size == 0 else len(self.hand.find('Ace'))
         pile_aces = 0 if self.pile.size == 0 else len(self.pile.find('Ace'))
@@ -140,6 +148,9 @@ class WarGameManager:
             if self.players[i].has_cards():
                 return self.players[i].name
 
+    def get_players(self):
+        return self.players.values()
+
     def game_summary(self):
         msg = ""
         for i in range(0, self.num_players):
@@ -195,17 +206,20 @@ class WarSimulator:
 
     def play_game(self):
         self.war.reset_game()
-        if self.debug:
-            print self.war
+        self.war_stats.add_new_game()
+        for player in self.war.get_players():
+            self.war_stats.add_game_status(self.war.number_of_hands, player.name, player.number_of_aces(), player.number_of_cards())
         while not self.war.is_game_over():
             self.war.play_hand(self.debug)
+            for player in self.war.get_players():
+                self.war_stats.add_game_status(self.war.number_of_hands, player.name, player.number_of_aces(), player.number_of_cards())
             if self.debug:
                 print self.war
         if self.debug:
             print self.war.game_summary()
-        self.war_stats.add_game(self.war.number_of_hands, self.war.get_winner())
+        self.war_stats.finalize_game(self.war.number_of_hands, self.war.get_winner())
 
-    def run(self, num_games=10):
+    def run(self, num_games=1):
         for n in range(0, num_games):
             self.play_game()
 
