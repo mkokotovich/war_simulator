@@ -5,15 +5,12 @@ from pydealer.const import POKER_RANKS
 from random import randint
 
 class Player:
-    def __init__(self, initial_cards=None, name=None):
+    def __init__(self, player_id, initial_cards=None):
         self.hand = pydealer.Stack()
         self.pile = pydealer.Stack()
         if initial_cards:
             self.hand += initial_cards
-        if name:
-            self.name = name
-        else:
-            self.name = "player{}".format(randint(0,100))
+        self.name = "player{}".format(player_id)
 
     def set_initial_cards(self, initial_cards):
         self.hand = pydealer.Stack()
@@ -118,7 +115,7 @@ class WarGameManager:
 
     def initialize_players(self):
         for i in range(0, self.num_players):
-            self.players[i] = Player()
+            self.players[i] = Player(i)
 
     def deal_new_deck(self):
         self.deck = pydealer.Deck()
@@ -184,14 +181,30 @@ class WarGameManager:
             print "{} won {} cards".format(self.players[trick.get_winner_id()].name, cards.size)
 
 
+class WarSimulator:
+    def __init__(self, debug=False, print_summary=True):
+        self.debug = debug
+        self.print_summary = print_summary
+        self.war = WarGameManager()
+
+    def play_game(self):
+        self.war.reset_game()
+        if self.debug:
+            print self.war
+        while not self.war.is_game_over():
+            self.war.play_hand(self.debug)
+            if self.debug:
+                print self.war
+        if self.print_summary:
+            print self.war.game_summary()
+
+    def run(self, num_games=10):
+        for n in range(0, num_games):
+            self.play_game()
+
 def main():
-    war = WarGameManager()
-    war.deal_new_deck()
-    print war
-    while not war.is_game_over():
-        war.play_hand(debug=True)
-        print war
-    print war.game_summary()
+    sim = WarSimulator(debug=False)
+    sim.run()
 
 if __name__ == "__main__":
     main()
