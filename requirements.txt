@@ -1,1 +1,2 @@
+peewee==2.8.5
 pydealer==1.4.0

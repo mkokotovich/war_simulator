@@ -3,6 +3,7 @@
 import pydealer
 from pydealer.const import POKER_RANKS
 from random import randint
+from stats import WarStats
 
 class Player:
     def __init__(self, player_id, initial_cards=None):
@@ -134,6 +135,11 @@ class WarGameManager:
                 return True
         return False
 
+    def get_winner(self):
+        for i in range(0, self.num_players):
+            if self.players[i].has_cards():
+                return self.players[i].name
+
     def game_summary(self):
         msg = ""
         for i in range(0, self.num_players):
@@ -182,10 +188,10 @@ class WarGameManager:
 
 
 class WarSimulator:
-    def __init__(self, debug=False, print_summary=True):
+    def __init__(self, debug=False):
         self.debug = debug
-        self.print_summary = print_summary
         self.war = WarGameManager()
+        self.war_stats = WarStats()
 
     def play_game(self):
         self.war.reset_game()
@@ -195,16 +201,21 @@ class WarSimulator:
             self.war.play_hand(self.debug)
             if self.debug:
                 print self.war
-        if self.print_summary:
+        if self.debug:
             print self.war.game_summary()
+        self.war_stats.add_game(self.war.number_of_hands, self.war.get_winner())
 
     def run(self, num_games=10):
         for n in range(0, num_games):
             self.play_game()
 
+    def stats(self):
+        return self.war_stats.summarize()
+
 def main():
     sim = WarSimulator(debug=False)
     sim.run()
+    print sim.stats()
 
 if __name__ == "__main__":
     main()
