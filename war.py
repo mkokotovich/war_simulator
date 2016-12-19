@@ -213,8 +213,11 @@ class WarSimulator:
         return self.war_stats.summarize()
 
 def main():
+    print "Setting up..."
     sim = WarSimulator(debug=False)
+    print "Running simulation..."
     sim.run()
+    print "Generating stats..."
     print sim.stats()
 
 if __name__ == "__main__":
