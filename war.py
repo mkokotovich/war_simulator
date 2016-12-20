@@ -6,25 +6,62 @@ from pydealer.const import POKER_RANKS
 from random import randint
 from stats import WarStats
 
+class CardCount:
+    def __init__(self):
+        self.counts = {
+            "Ace": 0,
+            "King": 0,
+            "Queen": 0,
+            "Jack": 0,
+            "10": 0,
+            "9": 0,
+            "8": 0,
+            "7": 0,
+            "6": 0,
+            "5": 0,
+            "4": 0,
+            "3": 0,
+            "2": 0,
+        }
+
+    def add_card(self, card):
+        self.counts[card.value] += 1
+
+    def remove_card(self, card):
+        self.counts[card.value] -= 1
+
+    def get_count(self, card_str):
+        return self.counts[card_str]
+
+    def get_total(self):
+        return sum(self.counts.values())
+
+    def get_count_dict(self):
+        return self.counts
+
+
 class Player:
     def __init__(self, player_id, initial_cards=None):
         self.hand = pydealer.Stack()
         self.pile = pydealer.Stack()
+        self.card_count = CardCount()
         if initial_cards:
             self.hand += initial_cards
+            for card in initial_cards:
+                self.card_count.add_card(card)
         self.name = "player{}".format(player_id)
 
     def set_initial_cards(self, initial_cards):
         self.hand = pydealer.Stack()
         self.hand += initial_cards
+        for card in initial_cards:
+            self.card_count.add_card(card)
 
-    def number_of_aces(self):
-        hand_aces = 0 if self.hand.size == 0 else len(self.hand.find('Ace'))
-        pile_aces = 0 if self.pile.size == 0 else len(self.pile.find('Ace'))
-        return hand_aces + pile_aces
+    def get_card_count(self):
+        return self.card_count.get_count_dict()
 
     def number_of_cards(self):
-        return self.hand.size + self.pile.size
+        return self.card_count.get_total()
 
     def print_cards(self, debug=False):
         hand_aces = 0 if self.hand.size == 0 else len(self.hand.find('Ace'))
@@ -48,7 +85,9 @@ class Player:
             else:
                 self.hand += self.pile.empty(return_cards=True)
                 self.hand.shuffle()
-        return self.hand.deal(1)[0]
+        card_to_play = self.hand.deal(1)[0]
+        self.card_count.remove_card(card_to_play)
+        return card_to_play
 
     def has_cards(self):
         return self.hand.size != 0 or self.pile.size != 0
@@ -64,6 +103,8 @@ class Player:
 
     def add_cards_to_pile(self, cards):
         self.pile += cards
+        for card in cards:
+            self.card_count.add_card(card)
 
     def __str__(self):
         return self.print_cards(False)
@@ -114,7 +155,6 @@ class Trick:
         return stack
 
 
-
 class WarGameManager:
     def __init__(self, num_players=2):
         self.num_players = num_players
@@ -128,7 +168,7 @@ class WarGameManager:
             self.players[i] = Player(i)
 
     def deal_new_deck(self):
-        self.deck = pydealer.Deck()
+        self.deck = pydealer.Deck(ranks=POKER_RANKS)
         self.deck.shuffle()
         for i in range(0, self.num_players):
             self.players[i].set_initial_cards(self.deck.deal(26))
@@ -209,11 +249,11 @@ class WarSimulator:
         self.war.reset_game()
         self.war_stats.add_new_game()
         for player in self.war.get_players():
-            self.war_stats.add_game_status(self.war.number_of_hands, player.name, player.number_of_aces(), player.number_of_cards())
+            self.war_stats.add_game_status(self.war.number_of_hands, player.name, player.get_card_count(), player.number_of_cards())
         while not self.war.is_game_over():
             self.war.play_hand(self.debug)
             for player in self.war.get_players():
-                self.war_stats.add_game_status(self.war.number_of_hands, player.name, player.number_of_aces(), player.number_of_cards())
+                self.war_stats.add_game_status(self.war.number_of_hands, player.name, player.get_card_count(), player.number_of_cards())
             if self.debug:
                 print self.war
         if self.debug:
