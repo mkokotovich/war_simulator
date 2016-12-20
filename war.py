@@ -1,6 +1,7 @@
 # Simulator for the card game war
 
 import pydealer
+import sys
 from pydealer.const import POKER_RANKS
 from random import randint
 from stats import WarStats
@@ -220,8 +221,12 @@ class WarSimulator:
         self.war_stats.finalize_game(self.war.number_of_hands, self.war.get_winner())
 
     def run(self, num_games=1):
+        sys.stdout.write("Running simulation")
         for n in range(0, num_games):
+            sys.stdout.write(".")
+            sys.stdout.flush()
             self.play_game()
+        sys.stdout.write("\n")
 
     def stats(self):
         return self.war_stats.summarize()
@@ -229,8 +234,7 @@ class WarSimulator:
 def main():
     print "Setting up..."
     sim = WarSimulator(debug=False)
-    print "Running simulation..."
-    sim.run()
+    sim.run(20)
     print "Generating stats..."
     print sim.stats()
 

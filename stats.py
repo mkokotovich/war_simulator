@@ -27,20 +27,37 @@ class WarStats:
         db.connect()
         db.create_tables([Game, Player, GameStatus], safe=True)
         self.current_game = None
+        self.player_cache = {}
+        self.status_cache = []
+
+    def reset(self):
+        self.current_game = None
+        self.player_cache = {}
+        self.status_cache = []
 
     def add_new_game(self):
+        self.reset()
         game = Game(winner=None, total_hands=0)
         game.save()
         self.current_game = game
 
     def add_game_status(self, current_hand, player, aces, total_cards):
-        player, created = Player.get_or_create(name=player)
-        status = GameStatus(game=self.current_game, hand=current_hand, player=player, aces=aces, total_cards=total_cards)
-        status.save()
-        if created:
-            player.save()
+        if player not in self.player_cache:
+            player_id, created = Player.get_or_create(name=player)
+            self.player_cache[player] = player_id
+            if created:
+                player_id.save()
+        self.status_cache.append(
+                {'game': self.current_game,
+                 'hand': current_hand,
+                 'player': self.player_cache[player],
+                 'aces': aces,
+                 'total_cards': total_cards})
 
     def finalize_game(self, total_hands, winner):
+        with db.atomic():
+            for idx in range(0, len(self.status_cache), 100):
+                GameStatus.insert_many(self.status_cache[idx:idx+100]).execute()
         self.current_game.total_hands=total_hands
         player, created = Player.get_or_create(name=winner)
         self.current_game.winner=player
@@ -67,7 +84,8 @@ class WarStats:
             if first_to_four == game.winner:
                 number_of_hands_won_by_first_to_four += 1
             number_of_hands_after_four.append(game.total_hands - hand_with_first_four)
-        msg += "Player to reach four aces first won {} percent of the time\n".format(float(number_of_hands_won_by_first_to_four/total_games))
+        first_four_ace_winning_percentage = 100*number_of_hands_won_by_first_to_four/float(total_games)
+        msg += "Player to reach four aces first won {} percent of the time\n".format(first_four_ace_winning_percentage)
         msg += "Average number of hands remaining after first person reaches four aces: {}".format(sum(number_of_hands_after_four)/float(total_games))
         return msg
 
