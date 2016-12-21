@@ -272,9 +272,12 @@ class WarSimulator:
         return self.war_stats.summarize()
 
 def main():
+    num_runs = 20
     print "Setting up..."
     sim = WarSimulator(debug=False)
-    sim.run(20)
+    if len(sys.argv) > 1:
+        num_runs = int(sys.argv[1])
+    sim.run(num_runs)
     print "Generating stats..."
     print sim.stats()
 
