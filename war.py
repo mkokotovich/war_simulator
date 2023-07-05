@@ -6,6 +6,7 @@ from pydealer.const import POKER_RANKS
 from random import randint
 from stats import WarStats
 
+
 class CardCount:
     def __init__(self):
         self.counts = {
@@ -138,17 +139,17 @@ class Trick:
         return len(self.current_winners) > 1
 
     def prepare_for_war(self):
-        self.bonus_cards += self.cards.values()
+        self.bonus_cards += list(self.cards.values())
         self.cards = {}
         self.current_winners = {}
         self.current_highest_card = None
 
     def get_winner_id(self):
-        return self.current_winners.keys()[0]
+        return list(self.current_winners.keys())[0]
 
     def get_all_cards_as_stack(self):
         stack = pydealer.Stack()
-        for x in self.cards.values():
+        for x in list(self.cards.values()):
             stack += [x]
         for x in self.bonus_cards:
             stack += [x]
@@ -190,7 +191,7 @@ class WarGameManager:
                 return self.players[i].name
 
     def get_players(self):
-        return self.players.values()
+        return list(self.players.values())
 
     def game_summary(self):
         msg = ""
@@ -213,7 +214,7 @@ class WarGameManager:
             card = self.players[i].play_card()
             trick.add_primary_card(i, card)
             if debug:
-                print "{}: {}".format(self.players[i].name, str(card))
+                print("{}: {}".format(self.players[i].name, str(card)))
         while trick.is_war():
             trick.prepare_for_war()
             cards_for_war_list = []
@@ -221,22 +222,22 @@ class WarGameManager:
                 cards_for_war_list.append(self.players[i].how_many_cards_can_be_played_for_war())
             cards_for_war = min(cards_for_war_list)
             if debug:
-                print "Warring with {} bonus cards".format(cards_for_war)
+                print("Warring with {} bonus cards".format(cards_for_war))
             for i in range(0, self.num_players):
                 for j in range(0, cards_for_war):
                     card = self.players[i].play_card()
                     trick.add_bonus_card(card)
                     if debug:
-                        print "{} added bonus card: {}".format(self.players[i].name, str(card))
+                        print("{} added bonus card: {}".format(self.players[i].name, str(card)))
                 card = self.players[i].play_card()
                 trick.add_primary_card(i, card)
                 if debug:
-                    print "{} war card: {}".format(self.players[i].name, str(card))
+                    print("{} war card: {}".format(self.players[i].name, str(card)))
         # Give all cards to winner
         cards = trick.get_all_cards_as_stack()
         self.players[trick.get_winner_id()].add_cards_to_pile(cards)
         if debug:
-            print "{} won {} cards".format(self.players[trick.get_winner_id()].name, cards.size)
+            print("{} won {} cards".format(self.players[trick.get_winner_id()].name, cards.size))
 
 
 class WarSimulator:
@@ -255,9 +256,9 @@ class WarSimulator:
             for player in self.war.get_players():
                 self.war_stats.add_game_status(self.war.number_of_hands, player.name, player.get_card_count(), player.number_of_cards())
             if self.debug:
-                print self.war
+                print(self.war)
         if self.debug:
-            print self.war.game_summary()
+            print(self.war.game_summary())
         self.war_stats.finalize_game(self.war.number_of_hands, self.war.get_winner())
 
     def run(self, num_games=1):
@@ -273,13 +274,13 @@ class WarSimulator:
 
 def main():
     num_runs = 20
-    print "Setting up..."
+    print("Setting up...")
     sim = WarSimulator(debug=False)
     if len(sys.argv) > 1:
         num_runs = int(sys.argv[1])
     sim.run(num_runs)
-    print "Generating stats..."
-    print sim.stats()
+    print("Generating stats...")
+    print(sim.stats())
 
 if __name__ == "__main__":
     main()

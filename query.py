@@ -17,7 +17,7 @@ def run_query():
     return msg
 
 def main():
-    print run_query()
+    print(run_query())
 
 if __name__ == "__main__":
     main()

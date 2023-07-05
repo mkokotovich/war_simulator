@@ -96,14 +96,14 @@ class WarStats:
                  'player': self.player_cache[player],
                  'total_cards': total_cards
              }
-        for key, value in card_count_dict.items():
+        for key, value in list(card_count_dict.items()):
             status_entry["num{}".format(key)] = value
         self.status_cache.append(status_entry)
 
     def finalize_game(self, total_hands, winner):
         with db.atomic():
-            for idx in range(0, len(self.status_cache), 100):
-                GameStatus.insert_many(self.status_cache[idx:idx+100]).execute()
+            for idx in range(0, len(self.status_cache), 1000):
+                GameStatus.insert_many(self.status_cache[idx:idx+1000]).execute()
         self.current_game.total_hands=total_hands
         player, created = Player.get_or_create(name=winner)
         self.current_game.winner=player
@@ -118,10 +118,9 @@ class WarStats:
         average_hands = total_hands / total_games
         msg += "{} games have been played, with an average length of {} hands\n".format(total_games, average_hands)
 
-        subq = Game.select(fn.COUNT(Game.id)).where(Game.winner == Player.id)
-        query = (Player.select(Player, Game, subq.alias("games_won")).join(Game, JOIN.LEFT_OUTER).order_by(Player.name))
-        for player in query.aggregate_rows():
-            msg += "{} has won {} games\n".format(player.name, player.games_won)
+        for player in Player.select():
+            games_won = Game.select().where(Game.winner == player.id).count()
+            print(f"Player {player} won {games_won} games")
 
         number_of_hands_after_four_cards = {}
         number_of_hands_won_by_first_to_four_cards = {}
@@ -153,7 +152,7 @@ class WarStats:
 
 def main():
     stats = WarStats()
-    print stats.summarize()
+    print(stats.summarize())
 
 if __name__ == "__main__":
     main()
